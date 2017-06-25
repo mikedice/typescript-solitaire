@@ -1,0 +1,28 @@
+
+.top-row{
+    margin-top: 30px;
+}
+.bottom-row{
+    margin-top: 40px;
+}
+
+.container{
+    display:flex;
+    flex-direction: row;
+    flex-wrap:nowrap;   
+    justify-content: space-between;
+    width: 1024px;
+}
+.card-pile{
+    height:150px;
+    width: 100px;
+    background-color: aquamarine;
+    position:relative;
+}
+.card{
+    height:150px;
+    width: 100px;
+    top:0;
+    left:0;
+    position: absolute;
+}
