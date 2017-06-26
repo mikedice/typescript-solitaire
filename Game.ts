@@ -1,27 +1,31 @@
 import {CardDeck} from './CardDeck'
 import {CardPile} from './CardPile'
+import {FoundationCardPile} from './FoundationCardPile'
+import {TableauCardPile} from './TableauCardPile'
 import {Card} from './Card'
+import {Suite} from './Suite'
+import {SourceCardInfo} from './SourceCardInfo'
 import * as dragulaExp from 'dragula'
 
 export class Game {
     private cardDeck: CardDeck;
     private stock: CardPile;
     private waste: CardPile;
-    private foundations: Array<CardPile>;
-    private tableau: Array<CardPile>
+    private foundations: Array<FoundationCardPile>;
+    private tableau: Array<TableauCardPile>
     private dragula: dragulaExp.Drake;
 
     public constructor(){
         this.cardDeck = new CardDeck();
         this.stock = new CardPile("stock");
         this.waste = new CardPile("waste");
-        this.foundations = new Array<CardPile>();
-        this.foundations.push(new CardPile("foundation-hearts"));
-        this.foundations.push(new CardPile("foundation-diamonds"));
-        this.foundations.push(new CardPile("foundation-clubs"));
-        this.foundations.push(new CardPile("foundation-spades"));
-        this.tableau = new Array<CardPile>();
-        for (var i = 0; i<7; i++) this.tableau.push(new CardPile(`tableau-${i+1}`));
+        this.foundations = new Array<FoundationCardPile>();
+        this.foundations.push(new FoundationCardPile(Suite.Hearts, "foundation-hearts"));
+        this.foundations.push(new FoundationCardPile(Suite.Diamonds,"foundation-diamonds"));
+        this.foundations.push(new FoundationCardPile(Suite.Clubs,"foundation-clubs"));
+        this.foundations.push(new FoundationCardPile(Suite.Spades, "foundation-spades"));
+        this.tableau = new Array<TableauCardPile>();
+        for (var i = 0; i<7; i++) this.tableau.push(new TableauCardPile(`tableau-${i+1}`));
         
         this.deal();
     }
@@ -57,7 +61,9 @@ export class Game {
             document.getElementById(this.tableau[4].domId),
             document.getElementById(this.tableau[5].domId),
             document.getElementById(this.tableau[6].domId)
-       ]);
+       ], {
+           accepts: (el, target, source, sibling) => this.accepts(el, target, source, sibling)
+       });
 
        // create DOM objects for each card
        this.stock.showTopCard();
@@ -65,5 +71,80 @@ export class Game {
            this.tableau[i].showTopCard();
        }
 
+    }
+
+    private accepts(el, target, source, sibling) {
+        var sourceCardInfo = Game.cardFromEl(el);
+        let result:boolean = false;
+        
+        if (sourceCardInfo == null) return false; // el wasn't a card and we only drag and drop cards
+
+        if (Game.isTableau(target) && this.canDropOnTableau(sourceCardInfo, target)){
+            result = true;
+        }
+        else if (Game.isFoundation(target) && this.canDropOnFoundation(sourceCardInfo, target))
+        {
+            result = true;
+        }
+
+        console.log (`${result?'can':'cannot'} drop ${sourceCardInfo.suite}:${sourceCardInfo.value} on ${target.id} from ${source.id}`);
+        return result;
+    }
+
+    private canDropOnTableau(sourceCardInfo:SourceCardInfo, targ:HTMLElement):boolean{
+        var els = targ.id.split("-");
+        var id = parseInt(els[1]);
+        id -= 1;
+        if (id < 0 || id > 6) return false;
+        var cardPile = this.tableau[id];
+        return cardPile.canAcceptCard(sourceCardInfo);
+    }
+
+    private canDropOnFoundation(sourceCardInfo:SourceCardInfo, targ:HTMLElement):boolean{
+        var els = targ.id.split("-");
+        let id:number = -1;
+        switch(els[1]){
+            case "hearts":
+                id=0;
+                break;
+            case "diamonds":
+                id=1;
+                break;
+            case "clubs":
+                id=2;
+                break;
+            case "spades":
+                id=3;
+                break;
+        }
+        
+        if (id == -1) return false;
+        var cardPile = this.foundations[id];
+        return cardPile.canAcceptCard(sourceCardInfo);
+    }
+    private static isTableau(el:HTMLElement):Boolean{
+        return Game.isElOfType(el, "tableau");
+    }
+
+    private static isFoundation(el:HTMLElement):Boolean{
+        return Game.isElOfType(el, "foundation");
+    }
+
+    private static isElOfType(el:HTMLElement, type:string):Boolean{
+            if (el.id){
+            var els = el.id.split("-")
+            return els[0]===type; 
+        }
+        return false;
+    }
+    private static cardFromEl(el:HTMLElement):SourceCardInfo{
+        var els = el.id.split("-");
+        if (els[0]==='card'){
+            return {
+                suite: parseInt(els[1]) as Suite,
+                value: parseInt(els[2])
+            };
+        }
+        return null;
     }
 }

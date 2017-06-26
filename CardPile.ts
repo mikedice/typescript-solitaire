@@ -1,4 +1,5 @@
 import {Card} from "./Card"
+import {SourceCardInfo} from "./SourceCardInfo"
 
 export class CardPile {
     private cards:Array<Card>;
@@ -8,6 +9,7 @@ export class CardPile {
         this.uiElement = document.getElementById(domId);
     }
 
+    protected getCards():Array<Card>{ return this.cards; }
     public push(card:Card){
         this.cards.push(card);
         this.uiElement.appendChild(card.uiElement);

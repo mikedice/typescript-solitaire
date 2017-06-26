@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 14);
+/******/ 	return __webpack_require__(__webpack_require__.s = 17);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -100,25 +100,76 @@ module.exports = g;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var CardDeck_1 = __webpack_require__(12);
-var CardPile_1 = __webpack_require__(13);
-var dragulaExp = __webpack_require__(9);
+var CardPile = (function () {
+    function CardPile(domId) {
+        this.domId = domId;
+        this.cards = new Array();
+        this.uiElement = document.getElementById(domId);
+    }
+    CardPile.prototype.getCards = function () { return this.cards; };
+    CardPile.prototype.push = function (card) {
+        this.cards.push(card);
+        this.uiElement.appendChild(card.uiElement);
+    };
+    CardPile.prototype.pop = function (card) {
+        if (this.cards.length == 0)
+            return null;
+        return this.cards.pop();
+    };
+    CardPile.prototype.showTopCard = function () {
+        this.cards[this.cards.length - 1].showFace();
+    };
+    return CardPile;
+}());
+exports.CardPile = CardPile;
+
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var Suite;
+(function (Suite) {
+    Suite[Suite["Clubs"] = 0] = "Clubs";
+    Suite[Suite["Diamonds"] = 1] = "Diamonds";
+    Suite[Suite["Hearts"] = 2] = "Hearts";
+    Suite[Suite["Spades"] = 3] = "Spades";
+})(Suite = exports.Suite || (exports.Suite = {}));
+
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var CardDeck_1 = __webpack_require__(14);
+var CardPile_1 = __webpack_require__(1);
+var FoundationCardPile_1 = __webpack_require__(15);
+var TableauCardPile_1 = __webpack_require__(16);
+var Suite_1 = __webpack_require__(2);
+var dragulaExp = __webpack_require__(11);
 var Game = (function () {
     function Game() {
         this.cardDeck = new CardDeck_1.CardDeck();
         this.stock = new CardPile_1.CardPile("stock");
         this.waste = new CardPile_1.CardPile("waste");
         this.foundations = new Array();
-        this.foundations.push(new CardPile_1.CardPile("foundation-hearts"));
-        this.foundations.push(new CardPile_1.CardPile("foundation-diamonds"));
-        this.foundations.push(new CardPile_1.CardPile("foundation-clubs"));
-        this.foundations.push(new CardPile_1.CardPile("foundation-spades"));
+        this.foundations.push(new FoundationCardPile_1.FoundationCardPile(Suite_1.Suite.Hearts, "foundation-hearts"));
+        this.foundations.push(new FoundationCardPile_1.FoundationCardPile(Suite_1.Suite.Diamonds, "foundation-diamonds"));
+        this.foundations.push(new FoundationCardPile_1.FoundationCardPile(Suite_1.Suite.Clubs, "foundation-clubs"));
+        this.foundations.push(new FoundationCardPile_1.FoundationCardPile(Suite_1.Suite.Spades, "foundation-spades"));
         this.tableau = new Array();
         for (var i = 0; i < 7; i++)
-            this.tableau.push(new CardPile_1.CardPile("tableau-" + (i + 1)));
+            this.tableau.push(new TableauCardPile_1.TableauCardPile("tableau-" + (i + 1)));
         this.deal();
     }
     Game.prototype.deal = function () {
+        var _this = this;
         // deal cards into the right piles
         var tableauIdx = 0;
         var tableauCounts = [1, 2, 3, 4, 5, 6, 7];
@@ -148,12 +199,82 @@ var Game = (function () {
             document.getElementById(this.tableau[4].domId),
             document.getElementById(this.tableau[5].domId),
             document.getElementById(this.tableau[6].domId)
-        ]);
+        ], {
+            accepts: function (el, target, source, sibling) { return _this.accepts(el, target, source, sibling); }
+        });
         // create DOM objects for each card
         this.stock.showTopCard();
         for (var i = 0; i < 7; i++) {
             this.tableau[i].showTopCard();
         }
+    };
+    Game.prototype.accepts = function (el, target, source, sibling) {
+        var sourceCardInfo = Game.cardFromEl(el);
+        var result = false;
+        if (sourceCardInfo == null)
+            return false; // el wasn't a card and we only drag and drop cards
+        if (Game.isTableau(target) && this.canDropOnTableau(sourceCardInfo, target)) {
+            result = true;
+        }
+        else if (Game.isFoundation(target) && this.canDropOnFoundation(sourceCardInfo, target)) {
+            result = true;
+        }
+        console.log((result ? 'can' : 'cannot') + " drop " + sourceCardInfo.suite + ":" + sourceCardInfo.value + " on " + target.id + " from " + source.id);
+        return result;
+    };
+    Game.prototype.canDropOnTableau = function (sourceCardInfo, targ) {
+        var els = targ.id.split("-");
+        var id = parseInt(els[1]);
+        id -= 1;
+        if (id < 0 || id > 6)
+            return false;
+        var cardPile = this.tableau[id];
+        return cardPile.canAcceptCard(sourceCardInfo);
+    };
+    Game.prototype.canDropOnFoundation = function (sourceCardInfo, targ) {
+        var els = targ.id.split("-");
+        var id = -1;
+        switch (els[1]) {
+            case "hearts":
+                id = 0;
+                break;
+            case "diamonds":
+                id = 1;
+                break;
+            case "clubs":
+                id = 2;
+                break;
+            case "spades":
+                id = 3;
+                break;
+        }
+        if (id == -1)
+            return false;
+        var cardPile = this.foundations[id];
+        return cardPile.canAcceptCard(sourceCardInfo);
+    };
+    Game.isTableau = function (el) {
+        return Game.isElOfType(el, "tableau");
+    };
+    Game.isFoundation = function (el) {
+        return Game.isElOfType(el, "foundation");
+    };
+    Game.isElOfType = function (el, type) {
+        if (el.id) {
+            var els = el.id.split("-");
+            return els[0] === type;
+        }
+        return false;
+    };
+    Game.cardFromEl = function (el) {
+        var els = el.id.split("-");
+        if (els[0] === 'card') {
+            return {
+                suite: parseInt(els[1]),
+                value: parseInt(els[2])
+            };
+        }
+        return null;
     };
     return Game;
 }());
@@ -161,20 +282,20 @@ exports.Game = Game;
 
 
 /***/ }),
-/* 2 */
+/* 4 */
 /***/ (function(module, exports) {
 
 module.exports = function atoa (a, n) { return Array.prototype.slice.call(a, n); }
 
 
 /***/ }),
-/* 3 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var ticky = __webpack_require__(10);
+var ticky = __webpack_require__(12);
 
 module.exports = function debounce (fn, args, ctx) {
   if (!fn) { return; }
@@ -185,14 +306,14 @@ module.exports = function debounce (fn, args, ctx) {
 
 
 /***/ }),
-/* 4 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var atoa = __webpack_require__(2);
-var debounce = __webpack_require__(3);
+var atoa = __webpack_require__(4);
+var debounce = __webpack_require__(5);
 
 module.exports = function emitter (thing, options) {
   var opts = options || {};
@@ -246,14 +367,14 @@ module.exports = function emitter (thing, options) {
 
 
 /***/ }),
-/* 5 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 /* WEBPACK VAR INJECTION */(function(global) {
 
-var customEvent = __webpack_require__(7);
-var eventmap = __webpack_require__(6);
+var customEvent = __webpack_require__(9);
+var eventmap = __webpack_require__(8);
 var doc = global.document;
 var addEvent = addEventEasy;
 var removeEvent = removeEventEasy;
@@ -355,7 +476,7 @@ function find (el, type, fn) {
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 6 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -376,7 +497,7 @@ module.exports = eventmap;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 7 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global) {
@@ -431,7 +552,7 @@ function CustomEvent (type, params) {
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 8 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -471,15 +592,15 @@ module.exports = {
 
 
 /***/ }),
-/* 9 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 /* WEBPACK VAR INJECTION */(function(global) {
 
-var emitter = __webpack_require__(4);
-var crossvent = __webpack_require__(5);
-var classes = __webpack_require__(8);
+var emitter = __webpack_require__(6);
+var crossvent = __webpack_require__(7);
+var classes = __webpack_require__(10);
 var doc = document;
 var documentElement = doc.documentElement;
 
@@ -1087,7 +1208,7 @@ module.exports = dragula;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 10 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(setImmediate) {var si = typeof setImmediate === 'function', tick;
@@ -1098,10 +1219,10 @@ if (si) {
 }
 
 module.exports = tick;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(17).setImmediate))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(20).setImmediate))
 
 /***/ }),
-/* 11 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1139,13 +1260,13 @@ exports.Card = Card;
 
 
 /***/ }),
-/* 12 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Card_1 = __webpack_require__(11);
+var Card_1 = __webpack_require__(13);
 var CardDeck = (function () {
     function CardDeck() {
         this.cardFiles = [[
@@ -1268,49 +1389,98 @@ exports.CardDeck = CardDeck;
 
 
 /***/ }),
-/* 13 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
-var CardPile = (function () {
-    function CardPile(domId) {
-        this.domId = domId;
-        this.cards = new Array();
-        this.uiElement = document.getElementById(domId);
+var CardPile_1 = __webpack_require__(1);
+var FoundationCardPile = (function (_super) {
+    __extends(FoundationCardPile, _super);
+    function FoundationCardPile(suite, domId) {
+        var _this = _super.call(this, domId) || this;
+        _this.suite = suite;
+        return _this;
     }
-    CardPile.prototype.push = function (card) {
-        this.cards.push(card);
-        this.uiElement.appendChild(card.uiElement);
+    FoundationCardPile.prototype.canAcceptCard = function (sourceCardInfo) {
+        return sourceCardInfo.suite == this.suite &&
+            ((_super.prototype.getCards.call(this).length == 0 && sourceCardInfo.value == 1) ||
+                (_super.prototype.getCards.call(this)[_super.prototype.getCards.call(this).length - 1].Value == sourceCardInfo.value - 1));
     };
-    CardPile.prototype.pop = function (card) {
-        if (this.cards.length == 0)
-            return null;
-        return this.cards.pop();
-    };
-    CardPile.prototype.showTopCard = function () {
-        this.cards[this.cards.length - 1].showFace();
-    };
-    return CardPile;
-}());
-exports.CardPile = CardPile;
+    return FoundationCardPile;
+}(CardPile_1.CardPile));
+exports.FoundationCardPile = FoundationCardPile;
 
 
 /***/ }),
-/* 14 */
+/* 16 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var CardPile_1 = __webpack_require__(1);
+var Suite_1 = __webpack_require__(2);
+var TableauCardPile = (function (_super) {
+    __extends(TableauCardPile, _super);
+    function TableauCardPile(domId) {
+        return _super.call(this, domId) || this;
+    }
+    TableauCardPile.prototype.canAcceptCard = function (sourceCardInfo) {
+        if (_super.prototype.getCards.call(this).length == 0)
+            return sourceCardInfo.value == 1;
+        var lastCard = _super.prototype.getCards.call(this)[_super.prototype.getCards.call(this).length - 1];
+        return (this.isRed(lastCard.Suite) && this.isBlack(sourceCardInfo.suite) &&
+            sourceCardInfo.value == lastCard.Value + 1) ||
+            (this.isBlack(lastCard.Suite) && this.isRed(sourceCardInfo.suite) &&
+                sourceCardInfo.value == lastCard.Value + 1);
+    };
+    TableauCardPile.prototype.isRed = function (suite) {
+        return suite != Suite_1.Suite.Clubs && suite != Suite_1.Suite.Spades;
+    };
+    TableauCardPile.prototype.isBlack = function (suite) {
+        return suite != Suite_1.Suite.Diamonds && suite != Suite_1.Suite.Hearts;
+    };
+    return TableauCardPile;
+}(CardPile_1.CardPile));
+exports.TableauCardPile = TableauCardPile;
+
+
+/***/ }),
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Game_1 = __webpack_require__(1);
+var Game_1 = __webpack_require__(3);
 var game = new Game_1.Game();
 //process.exit(); 
 
 
 /***/ }),
-/* 15 */
+/* 18 */
 /***/ (function(module, exports) {
 
 // shim for using process in browser
@@ -1500,7 +1670,7 @@ process.umask = function() { return 0; };
 
 
 /***/ }),
-/* 16 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global, process) {(function (global, undefined) {
@@ -1690,10 +1860,10 @@ process.umask = function() { return 0; };
     attachTo.clearImmediate = clearImmediate;
 }(typeof self === "undefined" ? typeof global === "undefined" ? this : global : self));
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0), __webpack_require__(15)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0), __webpack_require__(18)))
 
 /***/ }),
-/* 17 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var apply = Function.prototype.apply;
@@ -1746,7 +1916,7 @@ exports._unrefActive = exports.active = function(item) {
 };
 
 // setimmediate attaches itself to the global object
-__webpack_require__(16);
+__webpack_require__(19);
 exports.setImmediate = setImmediate;
 exports.clearImmediate = clearImmediate;
 
