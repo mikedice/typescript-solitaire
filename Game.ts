@@ -92,7 +92,11 @@ export class Game {
             result = true;
         }
 
-        console.log (`${result?'can':'cannot'} drop ${card.Suite}:${card.Value} on ${target.id} from ${source.id}`);
+        var targetPile = this.cardPileFromEl(target);
+        var targetTop = targetPile ? targetPile.getTopCard() : null;
+        var topString = targetTop ? `${targetTop.Suite}:${targetTop.Value}`:"null";
+
+        console.log (`${result?'can':'cannot'} drop ${card.Suite}:${card.Value} on ${target.id} ${topString} from ${source.id}`);
         return result;
     }
 
@@ -112,6 +116,10 @@ export class Game {
     {
         if (Game.isFoundation(pileEl)){
             let pile = this.foundationFromEl(pileEl);
+            pile.push(card);
+        }
+        else if (Game.isTableau(pileEl)){
+            let pile = this.tableauFromEl(pileEl);
             pile.push(card);
         }
     }
@@ -153,6 +161,13 @@ export class Game {
         var cardPile = this.tableauFromEl(targ);
         if (!cardPile) return false;
         return cardPile.canAcceptCard(card);
+    }
+
+    private cardPileFromEl(pileEl:HTMLElement):CardPile{
+        var pile = this.foundationFromEl(pileEl);
+        if (pile) return pile;
+
+        return this.tableauFromEl(pileEl);
     }
 
     private canDropOnFoundation(card:Card, targ:HTMLElement):boolean{

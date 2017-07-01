@@ -43,4 +43,9 @@ export class CardPile {
         if (this.cards.length ==0) return;
         this.cards[this.cards.length-1].showFace();
     }
+
+    public getTopCard():Card{
+        if (this.cards.length ==0) return;
+        return this.cards[this.cards.length-1];
+    }
 }

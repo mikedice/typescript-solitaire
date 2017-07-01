@@ -83,8 +83,8 @@ export class CardDeck{
         "9_of_clubs.svg",
         "10_of_clubs.svg",
         "jack_of_clubs.svg",
-        "king_of_clubs.svg",
-        "queen_of_clubs.svg"],
+        "queen_of_clubs.svg",
+        "king_of_clubs.svg"],
 
         ["ace_of_diamonds.svg",
         "2_of_diamonds.svg",
@@ -97,8 +97,8 @@ export class CardDeck{
         "9_of_diamonds.svg",
         "10_of_diamonds.svg",
         "jack_of_diamonds.svg",
-        "king_of_diamonds.svg",
-        "queen_of_diamonds.svg"],
+        "queen_of_diamonds.svg",
+        "king_of_diamonds.svg"],
 
         ["ace_of_hearts.svg",
         "2_of_hearts.svg",
@@ -111,8 +111,8 @@ export class CardDeck{
         "9_of_hearts.svg",
         "10_of_hearts.svg",
         "jack_of_hearts.svg",
-        "king_of_hearts.svg",
-        "queen_of_hearts.svg"],
+        "queen_of_hearts.svg",
+        "king_of_hearts.svg"],
 
         ["ace_of_spades.svg",
         "2_of_spades.svg",
@@ -125,6 +125,6 @@ export class CardDeck{
         "9_of_spades.svg",
         "10_of_spades.svg",
         "jack_of_spades.svg",
-        "king_of_spades.svg",
-        "queen_of_spades.svg"]];
+        "queen_of_spades.svg",
+        "king_of_spades.svg"]];
 }

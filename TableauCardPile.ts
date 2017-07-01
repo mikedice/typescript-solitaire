@@ -6,8 +6,8 @@ export class TableauCardPile extends CardPile {
     public constructor( domId:string ){ super(domId); }
 
     public canAcceptCard(card:Card):boolean {
-        // If there are no cards on the pile then an Ace can be dropped
-        if (this.cards.length == 0) return card.Value == 1; 
+        // If there are no cards on the pile then a King can be dropped
+        if (this.cards.length == 0) return card.Value == 13; 
 
         var lastCard = this.cards[this.cards.length-1];
 
