@@ -1,26 +1,24 @@
 import {CardPile} from "./CardPile"
-import {SourceCardInfo} from "./SourceCardInfo"
 import {Suite} from "./Suite"
+import {Card} from "./Card"
 
 export class TableauCardPile extends CardPile {
     public constructor( domId:string ){ super(domId); }
 
-    public canAcceptCard(sourceCardInfo:SourceCardInfo):boolean {
-        if (super.getCards().length == 0) return sourceCardInfo.value == 1;
-        var lastCard = super.getCards()[super.getCards().length-1];
+    public canAcceptCard(card:Card):boolean {
+        // If there are no cards on the pile then an Ace can be dropped
+        if (this.cards.length == 0) return card.Value == 1; 
 
-        return (this.isRed(lastCard.Suite) && this.isBlack(sourceCardInfo.suite) &&
-        sourceCardInfo.value == lastCard.Value + 1) ||
-        (this.isBlack(lastCard.Suite) && this.isRed(sourceCardInfo.suite) &&
-        sourceCardInfo.value == lastCard.Value + 1)
+        var lastCard = this.cards[this.cards.length-1];
 
-    }
-
-    private isRed(suite:Suite):boolean{
-        return suite!=Suite.Clubs && suite != Suite.Spades;
-    }
-
-    private isBlack(suite:Suite):boolean{
-        return suite != Suite.Diamonds && suite != Suite.Hearts;
+        // return opposite colors and new cards value is one more
+        // than last card's value
+        return (Card.isRed(lastCard.Suite) && 
+                Card.isBlack(card.Suite) && 
+                card.Value == lastCard.Value - 1) 
+            ||
+                (Card.isBlack(lastCard.Suite) && 
+                 Card.isRed(card.Suite) &&
+                 card.Value == lastCard.Value - 1);
     }
 }

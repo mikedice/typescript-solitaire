@@ -1,4 +1,7 @@
 import {Suite} from "./Suite"
+
+// associates a card suite and value with a UI element
+// that represents the card
 export class Card{
     public uiElement:HTMLElement;
     public constructor(
@@ -9,6 +12,7 @@ export class Card{
             this.uiElement = document.createElement("img");
             this.uiElement.id = `card-${this.Suite}-${this.Value}`;
             this.uiElement.setAttribute('class', 'card');
+            this.uiElement['card'] = this;
             if (this.ShowFace){
                 this.showFace();
             }
@@ -25,7 +29,11 @@ export class Card{
         this.uiElement.setAttribute('src', './SVG-cards-1.3/card-back-assets/card-back.png');
     }
     
-    public static Copy(source:Card):Card {
-        return new Card(source.Suite, source.Value, source.ImageFile, source.ShowFace);
+    public static isRed(suite:Suite):boolean{
+        return suite!=Suite.Clubs && suite != Suite.Spades;
+    }
+
+    public static isBlack(suite:Suite):boolean{
+        return suite != Suite.Diamonds && suite != Suite.Hearts;
     }
 }

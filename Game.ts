@@ -4,7 +4,6 @@ import {FoundationCardPile} from './FoundationCardPile'
 import {TableauCardPile} from './TableauCardPile'
 import {Card} from './Card'
 import {Suite} from './Suite'
-import {SourceCardInfo} from './SourceCardInfo'
 import * as dragulaExp from 'dragula'
 
 export class Game {
@@ -46,6 +45,7 @@ export class Game {
             }
         }
 
+
         // set up drag and drop
         this.dragula = dragulaExp([
             document.getElementById(this.stock.domId),
@@ -64,44 +64,61 @@ export class Game {
        ], {
            accepts: (el, target, source, sibling) => this.accepts(el, target, source, sibling)
        });
+       this.dragula.on('drop', (el, target, source, sibling) => this.handleDropped(el, target, source, sibling));
 
-       // create DOM objects for each card
        this.stock.showTopCard();
        for (var i = 0; i<7; i++) {
            this.tableau[i].showTopCard();
        }
+    }
 
+    private handleDropped(el, target, source, sibling){
+        let removed = this.removeCardFromPile(el, source);
+        this.addCardToPile(removed, target);
     }
 
     private accepts(el, target, source, sibling) {
-        var sourceCardInfo = Game.cardFromEl(el);
+        var card = Game.cardFromEl(el);
         let result:boolean = false;
         
-        if (sourceCardInfo == null) return false; // el wasn't a card and we only drag and drop cards
+        if (card == null) return false; // el wasn't a card and we only drag and drop cards
 
-        if (Game.isTableau(target) && this.canDropOnTableau(sourceCardInfo, target)){
+        if (Game.isTableau(target) && this.canDropOnTableau(card, target)){
             result = true;
         }
-        else if (Game.isFoundation(target) && this.canDropOnFoundation(sourceCardInfo, target))
+
+        else if (Game.isFoundation(target) && this.canDropOnFoundation(card, target))
         {
             result = true;
         }
 
-        console.log (`${result?'can':'cannot'} drop ${sourceCardInfo.suite}:${sourceCardInfo.value} on ${target.id} from ${source.id}`);
+        console.log (`${result?'can':'cannot'} drop ${card.Suite}:${card.Value} on ${target.id} from ${source.id}`);
         return result;
     }
 
-    private canDropOnTableau(sourceCardInfo:SourceCardInfo, targ:HTMLElement):boolean{
-        var els = targ.id.split("-");
-        var id = parseInt(els[1]);
-        id -= 1;
-        if (id < 0 || id > 6) return false;
-        var cardPile = this.tableau[id];
-        return cardPile.canAcceptCard(sourceCardInfo);
+    private removeCardFromPile(cardEl:HTMLElement, pileEl:HTMLElement):Card
+    {
+        var srcCard = Game.cardFromEl(cardEl);
+        if (Game.isTableau(pileEl)){
+            let pile = this.tableauFromEl(pileEl);
+            var result = pile.pop();
+            pile.showTopCard();
+            return result;
+        }
+        return null;
     }
 
-    private canDropOnFoundation(sourceCardInfo:SourceCardInfo, targ:HTMLElement):boolean{
-        var els = targ.id.split("-");
+    private addCardToPile(card:Card, pileEl:HTMLElement)
+    {
+        if (Game.isFoundation(pileEl)){
+            let pile = this.foundationFromEl(pileEl);
+            pile.push(card);
+        }
+    }
+
+    private foundationFromEl(el:HTMLElement):FoundationCardPile
+    {
+        var els = el.id.split("-");
         let id:number = -1;
         switch(els[1]){
             case "hearts":
@@ -118,9 +135,31 @@ export class Game {
                 break;
         }
         
-        if (id == -1) return false;
-        var cardPile = this.foundations[id];
-        return cardPile.canAcceptCard(sourceCardInfo);
+        if (id == -1) return null;
+        return this.foundations[id]; 
+    }
+
+    private tableauFromEl(el:HTMLElement):TableauCardPile
+    {
+        var els = el.id.split("-");
+        var id = parseInt(els[1]);
+        id -= 1;
+        if (id < 0 || id > 6) return null;
+
+        var cardPile = this.tableau[id];
+        return cardPile;
+    }
+    private canDropOnTableau(card:Card, targ:HTMLElement):boolean{
+        var cardPile = this.tableauFromEl(targ);
+        if (!cardPile) return false;
+        return cardPile.canAcceptCard(card);
+    }
+
+    private canDropOnFoundation(card:Card, targ:HTMLElement):boolean{
+        var cardPile = this.foundationFromEl(targ);
+        if (!cardPile) return false;
+
+        return cardPile.canAcceptCard(card);
     }
     private static isTableau(el:HTMLElement):Boolean{
         return Game.isElOfType(el, "tableau");
@@ -137,13 +176,10 @@ export class Game {
         }
         return false;
     }
-    private static cardFromEl(el:HTMLElement):SourceCardInfo{
+    private static cardFromEl(el:HTMLElement):Card{
         var els = el.id.split("-");
         if (els[0]==='card'){
-            return {
-                suite: parseInt(els[1]) as Suite,
-                value: parseInt(els[2])
-            };
+            return el['card'];
         }
         return null;
     }

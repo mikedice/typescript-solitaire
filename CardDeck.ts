@@ -15,7 +15,9 @@ export class CardDeck{
                 value=1;
             }
         }
-
+        for (var i = 0;i<52;i++){
+            console.log(`${this.Cards[i].Suite} ${this.Cards[i].Value}`);
+        }
         this.shuffle();
 
         this.verify();
@@ -23,12 +25,11 @@ export class CardDeck{
 
 // Fisher-Yates algorithm
     private shuffle(){
-        var last = 51
-        for (var i = 0; i<50; i++){
-            var rand = this.getRandomInt(i,52);
-            let temp:Card = Card.Copy(this.Cards[i]);
-            this.Cards[i] = Card.Copy(this.Cards[rand]);
-            this.Cards[rand] = Card.Copy(temp);
+        for (var i = 0; i<this.Cards.length-1; i++){
+            var rand = this.getRandomInt(i,this.Cards.length);
+            let temp:Card = this.Cards[i];
+            this.Cards[i] = this.Cards[rand];
+            this.Cards[rand] = temp;
         }
     }
 
@@ -59,10 +60,10 @@ export class CardDeck{
                 break;
             }
         }
-        console.log(`clubs ${values.zero.length} ${values.zero}`);
-        console.log(`diamonds ${values.one.length} ${values.one}`);
-        console.log(`hearts ${values.two.length} ${values.two}`);
-        console.log(`spades ${values.three.length} ${values.three}`);
+        console.log(`clubs[${values.zero.length}] ${values.zero}`);
+        console.log(`diamonds[${values.one.length}] ${values.one}`);
+        console.log(`hearts[${values.two.length}] ${values.two}`);
+        console.log(`spades[${values.three.length}] ${values.three}`);
     }
 
     private getRandomInt(min:number, max:number) {

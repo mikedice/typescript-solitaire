@@ -1,4 +1,4 @@
 import {Game} from "./Game"
 
-let game = new Game();
+window["game"] = new Game();
 //process.exit();
