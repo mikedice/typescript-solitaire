@@ -45,9 +45,8 @@ export class Game {
             }
         }
 
-
         // set up drag and drop
-        this.dragula = dragulaExp([
+        var ar = [
             document.getElementById(this.stock.domId),
             document.getElementById(this.waste.domId),
             document.getElementById(this.foundations[0].domId),
@@ -61,9 +60,11 @@ export class Game {
             document.getElementById(this.tableau[4].domId),
             document.getElementById(this.tableau[5].domId),
             document.getElementById(this.tableau[6].domId)
-       ], {
+       ];
+        this.dragula = dragulaExp(ar, {
            accepts: (el, target, source, sibling) => this.accepts(el, target, source, sibling)
        });
+
        this.dragula.on('drop', (el, target, source, sibling) => this.handleDropped(el, target, source, sibling));
 
        this.stock.showTopCard();
@@ -72,39 +73,33 @@ export class Game {
        }
     }
 
-    private handleDropped(el, target, source, sibling){
+    private handleDropped(el:HTMLElement, target:HTMLElement, source:HTMLElement, sibling:HTMLElement){
         let removed = this.removeCardFromPile(el, source);
         this.addCardToPile(removed, target);
     }
 
-    private accepts(el, target, source, sibling) {
+    // Check called during drag to see if drop will be allowed
+    private accepts(el, target, source, sibling):Boolean{
         var card = Game.cardFromEl(el);
-        let result:boolean = false;
+        let result:Boolean = false;
         
-        if (card == null) return false; // el wasn't a card and we only drag and drop cards
+        result = card != null &&
+            (
+                (Game.isTableau(target) && this.canDropOnTableau(card, target)) ||
+                (Game.isFoundation(target) && this.canDropOnFoundation(card, target)) ||
+                (Game.isStock(source) && Game.isWaste(target))
+            );
 
-        if (Game.isTableau(target) && this.canDropOnTableau(card, target)){
-            result = true;
-        }
-
-        else if (Game.isFoundation(target) && this.canDropOnFoundation(card, target))
-        {
-            result = true;
-        }
-
-        var targetPile = this.cardPileFromEl(target);
-        var targetTop = targetPile ? targetPile.getTopCard() : null;
-        var topString = targetTop ? `${targetTop.Suite}:${targetTop.Value}`:"null";
-
-        console.log (`${result?'can':'cannot'} drop ${card.Suite}:${card.Value} on ${target.id} ${topString} from ${source.id}`);
+        this.printAcceptsDiagnostic(result, card, target, source);
         return result;
     }
+
 
     private removeCardFromPile(cardEl:HTMLElement, pileEl:HTMLElement):Card
     {
         var srcCard = Game.cardFromEl(cardEl);
-        if (Game.isTableau(pileEl)){
-            let pile = this.tableauFromEl(pileEl);
+        var pile = this.cardPileFromEl(pileEl);
+        if (pile && srcCard){
             var result = pile.pop();
             pile.showTopCard();
             return result;
@@ -122,6 +117,23 @@ export class Game {
             let pile = this.tableauFromEl(pileEl);
             pile.push(card);
         }
+    }
+
+    private canDropOnTableau(card:Card, targ:HTMLElement):Boolean{
+        var cardPile = this.tableauFromEl(targ);
+        if (!cardPile) return false;
+        return cardPile.canAcceptCard(card);
+    }
+
+    private cardPileFromEl(pileEl:HTMLElement):CardPile{
+        let pile:CardPile = this.foundationFromEl(pileEl);
+        if (pile) return pile;
+
+        pile =  this.tableauFromEl(pileEl);
+        if (pile) return pile;
+
+        pile = this.stockFromEl(pileEl);
+        return pile;
     }
 
     private foundationFromEl(el:HTMLElement):FoundationCardPile
@@ -157,20 +169,20 @@ export class Game {
         var cardPile = this.tableau[id];
         return cardPile;
     }
-    private canDropOnTableau(card:Card, targ:HTMLElement):boolean{
-        var cardPile = this.tableauFromEl(targ);
-        if (!cardPile) return false;
-        return cardPile.canAcceptCard(card);
+
+    private stockFromEl(el:HTMLElement):CardPile{
+        if (Game.isStock(el)){
+            return this.stock;
+        }
     }
 
-    private cardPileFromEl(pileEl:HTMLElement):CardPile{
-        var pile = this.foundationFromEl(pileEl);
-        if (pile) return pile;
-
-        return this.tableauFromEl(pileEl);
+     private wateFromEl(el:HTMLElement):CardPile{
+        if (Game.isWaste(el)){
+            return this.waste;
+        }
     }
 
-    private canDropOnFoundation(card:Card, targ:HTMLElement):boolean{
+    private canDropOnFoundation(card:Card, targ:HTMLElement):Boolean{
         var cardPile = this.foundationFromEl(targ);
         if (!cardPile) return false;
 
@@ -184,6 +196,14 @@ export class Game {
         return Game.isElOfType(el, "foundation");
     }
 
+    private static isStock(el:HTMLElement):Boolean{
+        return Game.isElOfType(el, "stock");
+    }
+    
+    private static isWaste(el:HTMLElement):Boolean{
+        return Game.isElOfType(el, "waste");
+    }
+
     private static isElOfType(el:HTMLElement, type:string):Boolean{
             if (el.id){
             var els = el.id.split("-")
@@ -191,11 +211,19 @@ export class Game {
         }
         return false;
     }
+
     private static cardFromEl(el:HTMLElement):Card{
         var els = el.id.split("-");
         if (els[0]==='card'){
             return el['card'];
         }
         return null;
+    }
+
+    private printAcceptsDiagnostic(result:Boolean, card:Card, target:HTMLElement, source:HTMLElement){
+        var targetPile = this.cardPileFromEl(target);
+        var targetTop = targetPile ? targetPile.getTopCard() : null;
+        var topString = targetTop ? `${targetTop.Suite}:${targetTop.Value}`:"null";
+        console.log (`${result?'can':'cannot'} drop ${card.Suite}:${card.Value} on ${target.id} ${topString} from ${source.id}`);
     }
 }
