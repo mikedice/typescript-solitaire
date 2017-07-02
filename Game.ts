@@ -109,14 +109,8 @@ export class Game {
 
     private addCardToPile(card:Card, pileEl:HTMLElement)
     {
-        if (Game.isFoundation(pileEl)){
-            let pile = this.foundationFromEl(pileEl);
-            pile.push(card);
-        }
-        else if (Game.isTableau(pileEl)){
-            let pile = this.tableauFromEl(pileEl);
-            pile.push(card);
-        }
+        var cardPile = this.cardPileFromEl(pileEl);
+        if (cardPile){ cardPile.push(card); }
     }
 
     private canDropOnTableau(card:Card, targ:HTMLElement):Boolean{
@@ -133,7 +127,9 @@ export class Game {
         if (pile) return pile;
 
         pile = this.stockFromEl(pileEl);
-        return pile;
+        if (pile) return pile;
+        
+        return this.wasteFromEl(pileEl);
     }
 
     private foundationFromEl(el:HTMLElement):FoundationCardPile
@@ -176,7 +172,7 @@ export class Game {
         }
     }
 
-     private wateFromEl(el:HTMLElement):CardPile{
+     private wasteFromEl(el:HTMLElement):CardPile{
         if (Game.isWaste(el)){
             return this.waste;
         }

@@ -3,8 +3,20 @@ import {Suite} from "./Suite"
 import {Card} from "./Card"
 
 export class TableauCardPile extends CardPile {
-    public constructor( domId:string ){ super(domId); }
+    
+    public constructor( 
+        domId:string,
+        private fanOffset:number = 30 ){ 
 
+        super(domId); 
+        this.fanCards();
+    }
+
+    public push(card:Card){
+        super.push(card);
+        this.fanCards();
+    }
+    
     public canAcceptCard(card:Card):boolean {
         // If there are no cards on the pile then a King can be dropped
         if (this.cards.length == 0) return card.Value == 13; 
@@ -20,5 +32,15 @@ export class TableauCardPile extends CardPile {
                 (Card.isBlack(lastCard.Suite) && 
                  Card.isRed(card.Suite) &&
                  card.Value == lastCard.Value - 1);
+    }
+
+    public fanCards(){
+        let offset:number = 0;
+        for (var i = 0; i<this.cards.length; i++){
+            if (this.cards[i].ShowingFace){
+                this.cards[i].setFanOffset(offset);
+                offset += this.fanOffset;
+            }
+        }
     }
 }
