@@ -52,6 +52,7 @@ function dragula (initialContainers, options) {
   var _mirror; // mirror image
   var _source; // source container
   var _item; // item being dragged
+  var _items; // multiple items being dragged
   var _offsetX; // reference x
   var _offsetY; // reference y
   var _moveX; // reference move x
@@ -65,6 +66,7 @@ function dragula (initialContainers, options) {
 
   var o = options || {};
   if (o.moves === void 0) { o.moves = always; }
+  if (o.collect === void 0) { o.collect = function(){ return null; } }
   if (o.accepts === void 0) { o.accepts = always; }
   if (o.invalid === void 0) { o.invalid = invalidTarget; }
   if (o.containers === void 0) { o.containers = initialContainers || []; }
@@ -220,6 +222,7 @@ function dragula (initialContainers, options) {
 
     return {
       item: item,
+      items: o.collect(item, source),
       source: source
     };
   }
@@ -243,6 +246,7 @@ function dragula (initialContainers, options) {
 
     _source = context.source;
     _item = context.item;
+    _items = context.items;
     _initialSibling = _currentSibling = nextEl(context.item);
 
     drake.dragging = true;

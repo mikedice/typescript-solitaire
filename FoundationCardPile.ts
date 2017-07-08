@@ -4,11 +4,22 @@ import {Card} from "./Card"
 
 export class FoundationCardPile extends CardPile
 {
-    public constructor( public suite:Suite, domId:string ){ super(domId); }
+    public constructor( public suite:Suite, domId:string ){ 
+        super(domId, 
+        (e:DragEvent)=>{ 
+            console.log("foundation dragover");
+            return true; 
+        }, 
+        (e:DragEvent)=>{
+            return false;
+        }); 
+    }
+
     public push(card:Card){
         card.setFanOffset(0);
         super.push(card);
     }
+    
     public canAcceptCard(card:Card):boolean {
         if (card.Suite != this.suite) return false;
 

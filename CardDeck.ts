@@ -1,15 +1,16 @@
 import {Card} from "./Card"
 import {Suite} from "./Suite"
+import {DragAndDrop} from "./DragAndDrop"
 
 export class CardDeck{
     public Cards: Array<Card>
-    constructor(){
+    constructor(dragAndDrop:DragAndDrop){
         this.Cards = new Array<Card>(52);
         var value=1;
         var suite = 0;
         for (var i = 0; i<52; i++){
             var file = this.cardFiles[suite][value-1];
-            this.Cards[i] = new Card(suite, value++, file);
+            this.Cards[i] = new Card(suite, value++, file, dragAndDrop);
             if (value==14){
                 suite++;
                 value=1;

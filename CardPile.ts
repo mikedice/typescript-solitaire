@@ -6,10 +6,16 @@ export class CardPile {
     protected cards:Array<Card>;
     public uiElement:HTMLElement;
 
-    public constructor(public domId:string){
+    public constructor(public domId:string, handleDragOver:EventListener, handleDrop:EventListener){
         this.cards = new Array<Card>();
         this.uiElement = document.getElementById(domId);
         this.uiElement['cardPile'] = this;
+
+        if (handleDragOver)
+        this.uiElement.addEventListener('dragover', handleDragOver)
+
+        if (handleDrop)
+        this.uiElement.addEventListener('drop', handleDrop);
     }
     
     public push(card:Card){

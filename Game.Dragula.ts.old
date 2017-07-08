@@ -4,22 +4,20 @@ import {FoundationCardPile} from './FoundationCardPile'
 import {TableauCardPile} from './TableauCardPile'
 import {Card} from './Card'
 import {Suite} from './Suite'
-import {DragAndDrop} from './DragAndDrop'
+import * as dragulaExp from 'dragula'
 
 export class Game {
     private cardDeck: CardDeck;
     private stock: CardPile;
     private waste: CardPile;
     private foundations: Array<FoundationCardPile>;
-    private tableau: Array<TableauCardPile>;
-    private dragAndDrop:DragAndDrop;
-    public static Current:Game;
+    private tableau: Array<TableauCardPile>
+    private dragula: dragulaExp.Drake;
 
     public constructor(){
-        this.dragAndDrop = new DragAndDrop();
-        this.cardDeck = new CardDeck(this.dragAndDrop);
-        this.stock = new CardPile("stock", null, null);
-        this.waste = new CardPile("waste", null, null);
+        this.cardDeck = new CardDeck();
+        this.stock = new CardPile("stock");
+        this.waste = new CardPile("waste");
         this.foundations = new Array<FoundationCardPile>();
         this.foundations.push(new FoundationCardPile(Suite.Hearts, "foundation-hearts"));
         this.foundations.push(new FoundationCardPile(Suite.Diamonds,"foundation-diamonds"));
@@ -29,7 +27,6 @@ export class Game {
         for (var i = 0; i<7; i++) this.tableau.push(new TableauCardPile(`tableau-${i+1}`));
         
         this.deal();
-        Game.Current = this;
     }
     
     private deal(){
@@ -48,16 +45,61 @@ export class Game {
             }
         }
 
+        // set up drag and drop
+        var ar = [
+            document.getElementById(this.stock.domId),
+            document.getElementById(this.waste.domId),
+            document.getElementById(this.foundations[0].domId),
+            document.getElementById(this.foundations[1].domId),
+            document.getElementById(this.foundations[2].domId),
+            document.getElementById(this.foundations[3].domId),
+            document.getElementById(this.tableau[0].domId),
+            document.getElementById(this.tableau[1].domId),
+            document.getElementById(this.tableau[2].domId),
+            document.getElementById(this.tableau[3].domId),
+            document.getElementById(this.tableau[4].domId),
+            document.getElementById(this.tableau[5].domId),
+            document.getElementById(this.tableau[6].domId)
+       ];
+        this.dragula = dragulaExp(ar, {
+           collect: (el, source) => this.collect(el, source),
+           accepts: (el, target, source, sibling) => this.accepts(el, target, source, sibling)
+       });
+
+       this.dragula.on('drop', (el, target, source, sibling) => this.handleDropped(el, target, source, sibling));
+
        this.stock.showTopCard();
        for (var i = 0; i<7; i++) {
            this.tableau[i].showTopCard();
        }
     }
 
-    public moveCard(cardMove){
-
+    private handleDropped(el:HTMLElement, target:HTMLElement, source:HTMLElement, sibling:HTMLElement){
+        let removed = this.removeCardFromPile(el, source);
+        this.addCardToPile(removed, target);
     }
-    
+
+    private collect(el, source):Array<HTMLElement>{
+        console.log("Collect called");
+        return null;
+    }
+    // Check called during drag to see if drop will be allowed
+    private accepts(el, target, source, sibling):Boolean{
+        var card = Game.cardFromEl(el);
+        let result:Boolean = false;
+        
+        result = card != null &&
+            (
+                (Game.isTableau(target) && this.canDropOnTableau(card, target)) ||
+                (Game.isFoundation(target) && this.canDropOnFoundation(card, target)) ||
+                (Game.isStock(source) && Game.isWaste(target))
+            );
+
+        this.printAcceptsDiagnostic(result, card, target, source);
+        return result;
+    }
+
+
     private removeCardFromPile(cardEl:HTMLElement, pileEl:HTMLElement):Card
     {
         var srcCard = Game.cardFromEl(cardEl);
